@@ -1,21 +1,29 @@
 const store = {
   items: [
-    { id: cuid(), name: 'apples', checked: false },
-    { id: cuid(), name: 'oranges', checked: false },
-    { id: cuid(), name: 'milk', checked: true },
-    { id: cuid(), name: 'bread', checked: false }
+    { id: cuid(), name: 'apples', checked: false, editing: false },
+    { id: cuid(), name: 'oranges', checked: false, editing: false },
+    { id: cuid(), name: 'milk', checked: true, editing: false},
+    { id: cuid(), name: 'bread', checked: false, editing: false}
   ],
   hideCheckedItems: false
 };
 
 const generateItemElement = function (item) {
   let itemTitle = `<span class='shopping-item shopping-item__checked'>${item.name}</span>`;
+  let editingSnippit = ''
   if (!item.checked) {
     itemTitle = `
      <span class='shopping-item'>${item.name}</span>
     `;
   }
-
+  if (item.editing) {
+    editingSnippit = `
+    <form class='edit-form'>
+      <input type="text" name="shopping-list-edit" class="js-shopping-list-edit" placeholder="edit ${item.name}">
+      <button class="js-edit-submit" type="submit">submit</button>
+    </form>
+    `
+  }
   return `
     <li class='js-item-element' data-item-id='${item.id}'>
       ${itemTitle}
@@ -26,6 +34,10 @@ const generateItemElement = function (item) {
         <button class='shopping-item-delete js-item-delete'>
           <span class='button-label'>delete</span>
         </button>
+        <button class='shopping-item-edit js-item-edit'>
+          <span class='button-label'>edit</span>
+        </button>
+        ${editingSnippit}
       </div>
     </li>`;
 };
@@ -127,6 +139,40 @@ const handleDeleteItemClicked = function () {
   });
 };
 
+const changeItemNameOnEdit = function (id, newName) {
+  const foundItem = store.items.find(item => item.id == id);
+  foundItem.name = newName;
+}
+
+const editListItem = function (id) {
+  const foundItem = store.items.find(item => item.id === id);
+  foundItem.editing = !foundItem.editing;
+};
+
+const handleSubmitEdit = function () {
+  //Listen for click of submit and 
+  //change the state in the store
+  //render
+  $('.js-shopping-list').on('click', '.js-edit-submit', event => {
+    event.preventDefault();
+    const id = getItemIdFromElement(event.currentTarget);
+    const newItemName = $('.js-shopping-list-entry').val();
+    const newName = $('.js-shopping-list-edit').val();
+
+    editListItem(id);
+    changeItemNameOnEdit(id, newName);     
+    render()
+  })
+}
+
+const handleEditItemClicked = function () {
+  $('.js-shopping-list').on('click', '.js-item-edit', event => {
+    const id = getItemIdFromElement(event.currentTarget);
+    editListItem(id);
+    render();
+  });
+};
+
 /**
  * Toggles the store.hideCheckedItems property
  */
@@ -160,6 +206,8 @@ const handleShoppingList = function () {
   handleItemCheckClicked();
   handleDeleteItemClicked();
   handleToggleFilterClick();
+  handleEditItemClicked();
+  handleSubmitEdit();
 };
 
 // when the page loads, call `handleShoppingList`
